@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sistema de Pagamentos</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; padding: 50px; background: #efa5cd; }
+        .card { background: rgb(255, 255, 255); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; }
+        input, select { width: 100%; margin-bottom: 12px; padding: 10px; box-sizing: border-box;}
+        button { width: 100%; padding: 12px; background: #f70d86; color: rgb(255, 255, 255); border: none; border-radius: 6px; cursor: pointer; }
+        #recibo { display: none; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="card" id="form">
+        <h2>Registrar um Pagamento<style> h2{ text-align: center; color: #eb0195;}</style></h2>
+        <input type="text" id="holder" placeholder="Nome no Cartão">
+        <input type="text" id="card" placeholder="Número do Cartão" maxlength="16" minlength="16" required>
+        <input type="number" id="amount" placeholder="Valor">
+        <input type="password" id="password" placeholder="Senha">
+        <select id="type"><option value="CREDITO">Crédito</option><option value="DEBITO">Débito</option></select>
+        <button onclick="enviar()">Processar</button>
+    </div>
+
+    <div class="card" id="recibo">
+    <h2>Recibo</h2>
+    <p id="stat" style="font-weight: bold;"></p>
+    <p>Titular: <span id="r-nome"></span></p>
+    <p>Valor: R$ <span id="r-valor"></span></p>
+    <p>Data/Hora: <span id="r-data"></span></p>
+    <button onclick="location.reload()">Novo Pagamento</button>
+    </div>
+
+ <script>
+    async function enviar() {
+        // 1. Captura os valores dos inputs do formulário
+        const transacao = {
+            holderName: document.getElementById('holder').value,
+            cardNumber: document.getElementById('card').value,
+            amount: document.getElementById('amount').value,
+            paymentType: document.getElementById('type').value
+        };
+        const senha = document.getElementById('password').value;
+
+        // 2. Faz a requisição para o seu Backend Java
+        const response = await fetch(`/api/pagamentos?senha=${senha}`, {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(transacao)
+        });
+        
+        const data = await response.json();
+
+        // 3. Esconder o formulário e mostrar o recibo
+        document.getElementById('form').style.display = 'none';
+        document.getElementById('recibo').style.display = 'block';
+
+        // 4. Preencher as informações no recibo
+        document.getElementById('stat').innerText = data.status;
+        document.getElementById('r-nome').innerText = data.holderName;
+        document.getElementById('r-valor').innerText = parseFloat(data.amount).toFixed(2);
+        
+        // 5. Formatar a Data e Hora que vem do Java
+        const dataHora = new Date(data.createdAt);
+        document.getElementById('r-data').innerText = dataHora.toLocaleString('pt-BR');
+    }
+</script>
+</body>
+</html>
